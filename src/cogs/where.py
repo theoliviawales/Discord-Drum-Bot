@@ -41,6 +41,40 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 TRACKER_SPREADSHEET_ID = "1_Gd9O8Ol8kmX0AWRUjEynt9l40JlwsYLWPF_Haim6b8"
 SAMPLE_RANGE_NAME = "!A1:H50"
 
+def build_equipment_list(category, type):
+	creds = service_account.Credentials.from_service_account_file(
+		"credentials.json", scopes=SCOPES
+  	)
+
+	service = build("sheets", "v4", credentials=creds)
+	# Call the Sheets API
+	sheet = service.spreadsheets()
+	
+	values = None
+	try:
+		result = (
+			sheet.values()
+			.get(spreadsheetId=TRACKER_SPREADSHEET_ID, range=f'{category.upper() + SAMPLE_RANGE_NAME}', )
+			.execute()
+		)
+		values = result.get("values", [])
+	except HttpError as err:
+		print(err)
+		values = None
+
+	equipment_list = []
+	for row in values:
+		if row[0] == type:
+			equipment_list.append(Equipment(
+				id=row[1],
+				name=row[2],
+				nickname=row[3],
+				date=row[4],
+				location=row[5]
+			))
+	
+	return equipment_list
+
 @discohook.command.slash(
     'where', 
 	description = 'Get the location of an equipment item!', 
@@ -69,41 +103,12 @@ SAMPLE_RANGE_NAME = "!A1:H50"
 		]
 )
 async def where_command(interaction, category, type):
-	creds = service_account.Credentials.from_service_account_file(
-		"credentials.json", scopes=SCOPES
-  	)
+	equipment_list = build_equipment_list(category, type)
 
-	equipment_list = []
-	try:
-		service = build("sheets", "v4", credentials=creds)
-    	# Call the Sheets API
-		sheet = service.spreadsheets()
-		result = (
-			sheet.values()
-			.get(spreadsheetId=TRACKER_SPREADSHEET_ID, range=f'{category.upper() + SAMPLE_RANGE_NAME}', )
-			.execute()
-		)
-		values = result.get("values", [])
-
-		if not values:
-			print("No data found.")
-			return
-
-		for row in values:
-			if row[0] == type:
-				equipment_list.append(Equipment(
-					id=row[1],
-					name=row[2],
-					nickname=row[3],
-					date=row[4],
-					location=row[5]
-				))
-
-	except HttpError as err:
-		print(err)
 	if len(equipment_list) == 0:
 		text = "No equipment found."
 	else:
-		text = '\n'.join([f'[{i}]: {x.id} - {x.name}' for i,x in enumerate(equipment_list)])
+		text = '\n'.join([f'[{i}]: {x.id} - {x.name} - {x.nickname} - {x.location}' for i,x in enumerate(equipment_list)])
 
 	await interaction.response.send(text)
+
