@@ -13,7 +13,16 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-class Instrument():
+EQUIPMENT_TYPES = set(
+	[
+		'Instrument',
+		'Harness',
+		'Stand',
+		'Pad'
+	]
+)
+
+class Equipment():
   def __init__(self, id, name, nickname, date, location):
     self.id = id
     self.name = name
@@ -30,7 +39,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 # The ID and range of a sample spreadsheet.
 TRACKER_SPREADSHEET_ID = "1_Gd9O8Ol8kmX0AWRUjEynt9l40JlwsYLWPF_Haim6b8"
-SAMPLE_RANGE_NAME = "!A1:E50"
+SAMPLE_RANGE_NAME = "!A1:H50"
 
 @discohook.command.slash(
     'where', 
@@ -38,28 +47,40 @@ SAMPLE_RANGE_NAME = "!A1:E50"
 	guild_id = '1464453860805574760',
 	options = [
 		discohook.Option.string(
-			name='instrument',
-			description='Type of instrument (Bass, Snare, ...)',
-			required=True),
+			name='category',
+			description='Instrument category',
+			required=True,
+			choices=[
+                discohook.Choice(name="Snare", value="Snare"),
+                discohook.Choice(name="Bass", value="Bass"),
+                discohook.Choice(name="Tenors", value="Tenors"),
+				discohook.Choice(name="Cymbals", value="Cymbals"),
+            ],),
 		discohook.Option.string(
-			name='id',
-			description='ID of the equipment being queried',
-			required=True)
+			name='type',
+			description='Equipment type  (Instrument, Harness, Stand, Pad)',
+			required=True,
+			choices=[
+				discohook.Choice(name="Instrument", value="Instrument"),
+				discohook.Choice(name="Harness", value="Harness"),
+				discohook.Choice(name="Stand", value="Stand"),
+				discohook.Choice(name="Pad", value="Pad"),
+			],),
 		]
 )
-async def where_command(interaction, instrument, id):
+async def where_command(interaction, category, type):
 	creds = service_account.Credentials.from_service_account_file(
 		"credentials.json", scopes=SCOPES
   	)
 
-	returned_instrument = None
+	equipment_list = []
 	try:
 		service = build("sheets", "v4", credentials=creds)
     	# Call the Sheets API
 		sheet = service.spreadsheets()
 		result = (
 			sheet.values()
-			.get(spreadsheetId=TRACKER_SPREADSHEET_ID, range=f'{instrument.upper() + SAMPLE_RANGE_NAME}', )
+			.get(spreadsheetId=TRACKER_SPREADSHEET_ID, range=f'{category.upper() + SAMPLE_RANGE_NAME}', )
 			.execute()
 		)
 		values = result.get("values", [])
@@ -69,15 +90,20 @@ async def where_command(interaction, instrument, id):
 			return
 
 		for row in values:
-			print(row, id)
-			if (row[0] == id):
-				returned_instrument = Instrument(row[0], row[1], row[2], row[3], row[4])
-				break
+			if row[0] == type:
+				equipment_list.append(Equipment(
+					id=row[1],
+					name=row[2],
+					nickname=row[3],
+					date=row[4],
+					location=row[5]
+				))
+
 	except HttpError as err:
 		print(err)
-	if returned_instrument is None:
-		text = "Instrument not found"
+	if len(equipment_list) == 0:
+		text = "No equipment found."
 	else:
-		text = str(returned_instrument)
+		text = '\n'.join([f'[{i}]: {x.id} - {x.name}' for i,x in enumerate(equipment_list)])
 
 	await interaction.response.send(text)
