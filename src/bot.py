@@ -7,6 +7,7 @@ import aiohttp
 import discohook
 from starlette.responses import JSONResponse
 from .cogs.ping import ping_command
+from .cogs.where import where_command
 
 def run():
 
@@ -52,7 +53,8 @@ def run():
 
   # Add commands
   app.add_commands(
-    ping_command
+    ping_command,
+    where_command
   )
 
   # Attach / route for debugging
