@@ -172,7 +172,7 @@ async def where_command(interaction, category, type):
 	else:
 		text = tabulate_response(equipment_list)
 
-	await interaction.response.send(text)
+	await interaction.response.send(text, ephemeral=True)
 
 @discohook.command.slash(
     'assign', 
@@ -224,7 +224,7 @@ async def assign_command(interaction, category, type, id, location, date):
 			assigned_equipment = e
 			break
 	if assigned_equipment == None:
-		await interaction.response.send("No valid equipment found.")
+		await interaction.response.send("No valid equipment found.", ephemeral=True)
 		return
 	
 	if date is None:
@@ -247,5 +247,5 @@ async def assign_command(interaction, category, type, id, location, date):
 	else:
 		text = "Updated:\n" + tabulate_response(equipment_list)
 			
-	await interaction.response.send(text)
+	await interaction.response.send(text, ephemeral=True)
 	
