@@ -125,6 +125,18 @@ def build_equipment_list(category, type):
 	
 	return equipment_list
 
+def tabulate_response(equipment_list):
+	text_builder = []
+	text_builder.append('```')
+	text_builder.append(f'|{"ID":^4}|{"Name":^32}|{"Nickname":^26}|{"Location":^16}|')
+	text_builder.append(f'|{"":-^4}|{"":-^32}|{"":-^26}|{"":-^16}|')
+
+	for equipment in equipment_list:
+		text_builder.append(f'|{equipment.id:^4}|{equipment.name:^32}|{equipment.nickname:^26}|{equipment.location:^16}|')
+
+	text_builder.append('```')
+	return '\n'.join(text_builder)
+
 @discohook.command.slash(
     'where', 
 	description = 'Get the location of an equipment item', 
@@ -158,7 +170,7 @@ async def where_command(interaction, category, type):
 	if len(equipment_list) == 0:
 		text = "No equipment found."
 	else:
-		text = '\n'.join([f'ID [{x.id}]: {x.name} - {x.nickname} - {x.location}' for i,x in enumerate(equipment_list)])
+		text = tabulate_response(equipment_list)
 
 	await interaction.response.send(text)
 
@@ -233,7 +245,7 @@ async def assign_command(interaction, category, type, id, location, date):
 	if result is None:
 		text = "Failed to update tracker sheet."
 	else:
-		text = "Successfully updated tracker sheet."
+		text = "Updated:\n" + tabulate_response(equipment_list)
 			
 	await interaction.response.send(text)
 	
