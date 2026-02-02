@@ -8,6 +8,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import os.path
+import os
+import json
+import base64
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
@@ -23,6 +26,9 @@ EQUIPMENT_TYPES = set(
 		'Pad'
 	]
 )
+
+TRACKER_SPREADSHEET_KEY = 'TRACKER_SPREADSHEET_ID'
+SPREADSHEET_RANGE_KEY = 'SPREADSHEET_RANGE'
 
 class Equipment():
 	def __init__(self, id, name, nickname, date, location, row_index, row_data):
@@ -48,14 +54,17 @@ class Equipment():
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-# The ID and range of a sample spreadsheet.
-TRACKER_SPREADSHEET_ID = "1_Gd9O8Ol8kmX0AWRUjEynt9l40JlwsYLWPF_Haim6b8"
-SAMPLE_RANGE_NAME = "!A1:H50"
+def get_credentials():
+	base64_creds_json = os.environ["GOOGLE_CREDENTIALS"]
+	base64_creds_bytes = base64.b64decode(base64_creds_json)
+	creds_str = base64_creds_bytes.decode('utf-8')
+	creds_json = json.loads(creds_str)
+	return service_account.Credentials.from_service_account_info(
+		creds_json, scopes=SCOPES
+  	)
 
 def query_sheet(category):
-	creds = service_account.Credentials.from_service_account_file(
-		"credentials.json", scopes=SCOPES
-  	)
+	creds = get_credentials()
 
 	service = build("sheets", "v4", credentials=creds)
 	# Call the Sheets API
@@ -65,7 +74,7 @@ def query_sheet(category):
 	try:
 		result = (
 			sheet.values()
-			.get(spreadsheetId=TRACKER_SPREADSHEET_ID, range=f'{category.upper() + SAMPLE_RANGE_NAME}', )
+			.get(spreadsheetId=os.environ[TRACKER_SPREADSHEET_KEY], range=f'{category.upper() + os.environ[SPREADSHEET_RANGE_KEY]}', )
 			.execute()
 		)
 		values = result.get("values", [])
@@ -76,9 +85,7 @@ def query_sheet(category):
 	return values
 
 def update_sheet(category, values):
-	creds = service_account.Credentials.from_service_account_file(
-		"credentials.json", scopes=SCOPES
-  	)
+	creds = get_credentials()
 
 	service = build("sheets", "v4", credentials=creds)
 	# Call the Sheets API
@@ -88,8 +95,8 @@ def update_sheet(category, values):
 		result = (
 			sheet.values()
 			.update(
-				spreadsheetId=TRACKER_SPREADSHEET_ID, 
-				range=f'{category.upper() + SAMPLE_RANGE_NAME}',
+				spreadsheetId=os.environ[TRACKER_SPREADSHEET_KEY], 
+				range=f'{category.upper() + os.environ[SPREADSHEET_RANGE_KEY]}',
 				valueInputOption='USER_ENTERED',
 				body={'values': values})
 			.execute()
