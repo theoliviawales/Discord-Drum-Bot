@@ -140,7 +140,7 @@ def tabulate_response(equipment_list):
 @discohook.command.slash(
     'where', 
 	description = 'Get the location of an equipment item', 
-	guild_id = '1464453860805574760',
+	guild_id = '1145000462089732298',
 	options = [
 		discohook.Option.string(
 			name='category',
@@ -177,7 +177,7 @@ async def where_command(interaction, category, type):
 @discohook.command.slash(
     'assign', 
 	description = 'Assign the location of an equipment item', 
-	guild_id = '1464453860805574760',
+	guild_id = '1145000462089732298',
 	options = [
 		discohook.Option.string(
 			name='category',
