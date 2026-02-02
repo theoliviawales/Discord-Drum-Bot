@@ -128,7 +128,7 @@ def build_equipment_list(category, type):
 def tabulate_response(equipment_list):
 	text_builder = []
 	text_builder.append('```')
-	text_builder.append(f'|{"ID":^4}|{"Name":^32}|{"Nickname":^26}|{"Location":^16}|')
+	text_builder.append(f'|{"ID":^4}|{"Name":^32}|{"Tag":^26}|{"Location":^16}|')
 	text_builder.append(f'|{"":-^4}|{"":-^32}|{"":-^26}|{"":-^16}|')
 
 	for equipment in equipment_list:
